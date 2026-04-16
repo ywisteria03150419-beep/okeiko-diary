@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>おけいこ日記</title>
+  <meta name="description" content="茶道のおけいこを記録するアプリ">
+  <meta name="theme-color" content="#c8dfa8">
+  <!-- PWA: ホーム画面追加  -->
+    <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="おけいこ日記">
+  <link rel="manifest" href="manifest.json">
+  <!-- アプリアイコン（SVGをPNGにした場合に備えてリンク） -->
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Hiragino Mincho ProN', 'Yu Mincho', 'ＭＳ 明朝', Georgia, serif;
+      background: #f8faf5;
+      color: #4a3e3e;
+      min-height: 100vh;
+    }
+
+    /* ヘッダー */
+    header {
+      background: linear-gradient(135deg, #c8dfa8, #e8c8d4, #b8d498);
+      text-align: center;
+      padding: 24px 16px 18px;
+      box-shadow: 0 2px 10px rgba(120, 160, 100, 0.2);
+      position: relative;
+      overflow: hidden;
+    }
+
+    header::before {
+      content: '❀';
+      position: absolute;
+      font-size: 36px;
+      opacity: 0.2;
+      top: 50%;
+      left: 14px;
+      transform: translateY(-50%);
+    }
+    header::after {
+      content: '❀';
+      position: absolute;
+      font-size: 36px;
+      opacity: 0.2;
+      top: 50%;
+      right: 14px;
+      transform: translateY(-50%);
+    }
+
+    .header-inner {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 18px;
+    }
+
+    /* 抹茶お茶碗SVG */
+    .chawan-svg {
+      flex-shrink: 0;
+    }
+
+    .header-title h1 {
+      font-size: 26px;
+      letter-spacing: 6px;
+      color: #3a5a28;
+      text-shadow: 0 1px 2px rgba(255,255,255,0.6);
+    }
+    .header-title p {
+      font-size: 12px;
+      color: #6a8a50;
+      margin-top: 4px;
+      letter-spacing: 3px;
+    }
+
+    /* タブ */
+    .tab-nav {
+      display: flex;
+      background: #eaf2e0;
+      border-bottom: 2px solid #b8d498;
+    }
+
+    .tab-btn {
+      flex: 1;
+      padding: 12px;
+      border: none;
+      background: transparent;
+      font-family: inherit;
+      font-size: 14px;
+      letter-spacing: 2px;
+      color: #8aaa70;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .tab-btn.active {
+      background: #f8faf5;
+      color: #3a5a28;
+      font-weight: bold;
+      border-bottom: 3px solid #6a9a40;
+      margin-bottom: -2px;
+    }
+
+    /* メインコンテンツ */
+    main {
+      max-width: 620px;
+      margin: 0 auto;
+      padding: 20px 16px 40px;
+    }
+
+    .tab-content {
+      display: none;
+    }
+    .tab-content.active {
+      display: block;
+    }
+
+    /* フォーム */
+    .form-section {
+      background: white;
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 2px 12px rgba(100, 150, 80, 0.1);
+      border: 1px solid #c8dfa8;
+    }
+
+    .form-section h2 {
+      font-size: 15px;
+      letter-spacing: 3px;
+      color: #4a7a30;
+      margin-bottom: 20px;
+      text-align: center;
+      padding-bottom: 10px;
+      border-bottom: 1px dashed #b8d498;
+    }
+
+    .field {
+      margin-bottom: 16px;
+    }
+
+    .field label {
+      display: block;
+      font-size: 13px;
+      letter-spacing: 2px;
+      color: #7a5060;
+      margin-bottom: 6px;
+    }
+
+    /* 日付エリア */
+    .date-wrapper {
+      position: relative;
+      border: 1px solid #c8dfa8;
+      border-radius: 10px;
+      background: #f8faf5;
+      transition: border 0.2s, background 0.2s;
+    }
+
+    .date-wrapper:focus-within {
+      border-color: #6a9a40;
+      background: #f0f8e8;
+    }
+
+    .date-display {
+      padding: 10px 14px;
+      font-size: 14px;
+      color: #4a3e3e;
+      pointer-events: none;
+      min-height: 40px;
+      line-height: 1.4;
+    }
+
+    .field input[type="date"] {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      opacity: 0;
+      cursor: pointer;
+      border: none;
+      background: transparent;
+    }
+
+    .field textarea {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1px solid #c8dfa8;
+      border-radius: 10px;
+      font-family: inherit;
+      font-size: 14px;
+      color: #4a3e3e;
+      background: #f8faf5;
+      outline: none;
+      transition: border 0.2s;
+      resize: vertical;
+      line-height: 1.7;
+    }
+
+    .field textarea:focus {
+      border-color: #6a9a40;
+      background: #f0f8e8;
+    }
+
+    .field textarea.rows3 {
+      min-height: 74px;
+    }
+
+    .field textarea.rows3-memo {
+      min-height: 86px;
+    }
+
+    /* セクション区切り */
+    .section-divider {
+      display: none;
+    }
+
+    /* 写真添付 */
+    .photo-field {
+      margin-bottom: 16px;
+    }
+
+    .photo-label-text {
+      display: block;
+      font-size: 13px;
+      letter-spacing: 2px;
+      color: #7a5060;
+      margin-bottom: 6px;
+    }
+
+    .photo-upload-area {
+      position: relative;
+      border: 2px dashed #c8dfa8;
+      border-radius: 10px;
+      background: #f8faf5;
+      text-align: center;
+      padding: 16px;
+      cursor: pointer;
+      transition: border 0.2s, background 0.2s;
+    }
+
+    .photo-upload-area:hover {
+      border-color: #6a9a40;
+      background: #f0f8e8;
+    }
+
+    .photo-upload-area input[type="file"] {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      opacity: 0;
+      cursor: pointer;
+    }
+
+    .photo-upload-hint {
+      font-size: 13px;
+      color: #9aaa80;
+      letter-spacing: 1px;
+    }
+
+    .photo-preview {
+      margin-top: 10px;
+      display: none;
+    }
+
+    .photo-preview img {
+      max-width: 100%;
+      max-height: 200px;
+      border-radius: 8px;
+      border: 1px solid #c8dfa8;
+      object-fit: contain;
+    }
+
+    .photo-remove-btn {
+      display: inline-block;
+      margin-top: 6px;
+      font-size: 12px;
+      color: #b08090;
+      background: none;
+      border: 1px solid #f5b8cc;
+      border-radius: 6px;
+      padding: 3px 10px;
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    .photo-remove-btn:hover {
+      background: #fff0f5;
+      color: #e87a9a;
+    }
+
+    /* カード内写真 */
+    .card-photo {
+      margin-top: 10px;
+    }
+
+    .card-photo img {
+      max-width: 100%;
+      max-height: 180px;
+      border-radius: 8px;
+      border: 1px solid #c8dfa8;
+      object-fit: contain;
+    }
+
+    /* 保存ボタン */
+    .btn-save {
+      display: block;
+      width: 100%;
+      margin-top: 20px;
+      padding: 14px;
+      background: linear-gradient(135deg, #8aba60, #5a9a30);
+      color: white;
+      border: none;
+      border-radius: 50px;
+      font-family: inherit;
+      font-size: 16px;
+      letter-spacing: 4px;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(80, 150, 50, 0.3);
+      transition: all 0.2s;
+    }
+
+    .btn-save:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(80, 150, 50, 0.4);
+    }
+
+    .btn-save:active {
+      transform: translateY(0);
+    }
+
+    /* 完了メッセージ */
+    .success-msg {
+      display: none;
+      text-align: center;
+      padding: 12px;
+      background: #f0f8e8;
+      border: 1px solid #b8d498;
+      border-radius: 10px;
+      color: #4a7a30;
+      font-size: 14px;
+      letter-spacing: 2px;
+      margin-top: 12px;
+    }
+
+    /* 一覧 */
+    .list-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .list-header h2 {
+      font-size: 16px;
+      letter-spacing: 3px;
+      color: #3a5a28;
+    }
+
+    .record-count {
+      font-size: 12px;
+      color: #8aaa70;
+      letter-spacing: 1px;
+    }
+
+    .empty-msg {
+      text-align: center;
+      padding: 48px 16px;
+      color: #a0c080;
+      font-size: 14px;
+      letter-spacing: 2px;
+      line-height: 2.2;
+    }
+
+    /* 記録カード */
+    .record-card {
+      background: white;
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 14px;
+      box-shadow: 0 2px 10px rgba(100, 150, 80, 0.1);
+      border: 1px solid #c8dfa8;
+      position: relative;
+    }
+
+    .record-card .card-date {
+      font-size: 15px;
+      color: #4a8a30;
+      letter-spacing: 2px;
+      margin-bottom: 8px;
+      font-weight: bold;
+    }
+
+    .record-card .card-content-label {
+      font-size: 11px;
+      color: #9aaa80;
+      letter-spacing: 2px;
+      margin-bottom: 2px;
+    }
+
+    .record-card .card-content {
+      font-size: 14px;
+      color: #4a3e3e;
+      margin-bottom: 10px;
+      line-height: 1.7;
+      white-space: pre-wrap;
+    }
+
+    .card-meta {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      font-size: 13px;
+      color: #6a8050;
+      margin-bottom: 10px;
+    }
+
+    .card-meta-item {
+      display: flex;
+      gap: 6px;
+    }
+
+    .card-meta-item .mlabel {
+      color: #9aaa80;
+      white-space: nowrap;
+      min-width: 52px;
+    }
+
+    .card-meta-item .mvalue {
+      color: #5a6a4a;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+
+    .card-note {
+      font-size: 13px;
+      color: #5a6a4a;
+      background: #f4f9ee;
+      border-radius: 8px;
+      padding: 10px 12px;
+      line-height: 1.8;
+      border-left: 3px solid #8aba60;
+      margin-top: 8px;
+    }
+
+    .card-note .note-label {
+      font-size: 11px;
+      color: #9aaa80;
+      letter-spacing: 2px;
+      margin-bottom: 4px;
+    }
+
+    .btn-delete {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      background: none;
+      border: 1px solid #c8dfa8;
+      border-radius: 6px;
+      color: #a0b890;
+      font-size: 11px;
+      padding: 3px 8px;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.2s;
+    }
+
+    .btn-delete:hover {
+      background: #f0f8e8;
+      color: #5a9a30;
+      border-color: #6a9a40;
+    }
+
+    /* 区切り */
+    .card-divider {
+      text-align: center;
+      color: #c8dfa8;
+      letter-spacing: 8px;
+      font-size: 13px;
+      margin: 4px 0 10px;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-inner">
+
+      <!-- 抹茶お茶碗イラスト（SVG） -->
+      <svg class="chawan-svg" width="72" height="68" viewBox="0 0 72 68" xmlns="http://www.w3.org/2000/svg">
+        <!-- お茶碗 本体 -->
+        <path d="M10 32 Q8 53 20 58 Q28 63 36 63 Q44 63 52 58 Q64 53 62 32 Q62 20 36 20 Q10 20 10 32 Z" fill="#d4b478"/>
+        <!-- お茶碗 内側ライン -->
+        <path d="M14 34 Q12 51 24 56 Q30 60 36 60 Q42 60 48 56 Q60 51 58 34" fill="none" stroke="#c89a50" stroke-width="1.2" opacity="0.5"/>
+        <!-- お茶碗 外側模様（薄い縦線） -->
+        <line x1="22" y1="24" x2="20" y2="54" stroke="#c89a50" stroke-width="0.8" opacity="0.3"/>
+        <line x1="36" y1="21" x2="36" y2="58" stroke="#c89a50" stroke-width="0.8" opacity="0.3"/>
+        <line x1="50" y1="24" x2="52" y2="54" stroke="#c89a50" stroke-width="0.8" opacity="0.3"/>
+        <!-- 抹茶の液面（楕円） -->
+        <ellipse cx="36" cy="32" rx="20" ry="8" fill="#5a9a30"/>
+        <!-- 抹茶の泡（薄い緑） -->
+        <ellipse cx="36" cy="32" rx="18" ry="6.5" fill="#7aba50"/>
+        <ellipse cx="30" cy="30" rx="5" ry="2" fill="#9ad068" opacity="0.6"/>
+        <ellipse cx="42" cy="33" rx="4" ry="1.8" fill="#9ad068" opacity="0.5"/>
+        <ellipse cx="36" cy="28" rx="3" ry="1.2" fill="#b0e080" opacity="0.5"/>
+        <!-- 茶筅の跡（らせん） -->
+        <path d="M28 31 Q33 28 38 31 Q43 34 36 35" fill="none" stroke="#4a7a20" stroke-width="1" opacity="0.5"/>
+        <!-- 湯気 -->
+        <path d="M28 18 Q26 12 28 8 Q30 4 28 0" fill="none" stroke="#a8c890" stroke-width="1.5" stroke-linecap="round" opacity="0.6"/>
+        <path d="M36 16 Q34 10 36 6 Q38 2 36 -2" fill="none" stroke="#a8c890" stroke-width="1.5" stroke-linecap="round" opacity="0.5"/>
+        <path d="M44 18 Q42 12 44 8 Q46 4 44 0" fill="none" stroke="#a8c890" stroke-width="1.5" stroke-linecap="round" opacity="0.6"/>
+      </svg>
+
+      <div class="header-title">
+        <h1>おけいこ日記</h1>
+        <p>茶　道</p>
+      </div>
+
+    </div>
+  </header>
+
+  <div class="tab-nav">
+    <button class="tab-btn active" onclick="switchTab('form', this)">✏️ 記録する</button>
+    <button class="tab-btn" onclick="switchTab('list', this)">📖 記録一覧</button>
+  </div>
+
+  <main>
+
+    <!-- 入力フォーム -->
+    <div id="tab-form" class="tab-content active">
+      <div class="form-section">
+        <h2>❀ 今日のおけいこ ❀</h2>
+
+        <!-- 日付 -->
+        <div class="field">
+          <label>日　付</label>
+          <div class="date-wrapper">
+            <div class="date-display" id="date-display">　</div>
+            <input type="date" id="f-date" onchange="updateDow()">
+          </div>
+        </div>
+
+        <!-- 内容 -->
+        <div class="field">
+          <label>内　容</label>
+          <textarea class="rows3" id="f-content" rows="3" placeholder="例：薄茶点前、棚の扱いなど"></textarea>
+        </div>
+
+        <!-- 参加者 -->
+        <div class="field">
+          <label>参 加 者</label>
+          <textarea class="rows3" id="f-members" rows="3" placeholder="例：先生、○○さん、△△さん"></textarea>
+        </div>
+
+        <div class="section-divider">· · · ·</div>
+
+        <!-- お茶 -->
+        <div class="field">
+          <label>お　茶</label>
+          <textarea class="rows3" id="f-tea" rows="3" placeholder="例：むさしの、一保堂の抹茶など"></textarea>
+        </div>
+
+        <!-- お菓子 -->
+        <div class="field">
+          <label>お 菓 子</label>
+          <textarea class="rows3" id="f-sweets" rows="3" placeholder="例：上用饅頭、練り切りなど"></textarea>
+        </div>
+
+        <!-- お花 -->
+        <div class="field">
+          <label>お　花</label>
+          <textarea class="rows3" id="f-flower" rows="3" placeholder="例：椿、水仙、梅など"></textarea>
+        </div>
+
+        <!-- 掛物 -->
+        <div class="field">
+          <label>掛　物</label>
+          <textarea class="rows3" id="f-kakemono" rows="3" placeholder="例：和敬清寂、一期一会など"></textarea>
+        </div>
+
+        <div class="section-divider">· · · ·</div>
+
+        <!-- 学んだこと・感じたこと -->
+        <div class="field">
+          <label>学んだこと・感じたこと</label>
+          <textarea class="row3-memo" id="f-memo" rows="3" placeholder="今日のおけいこし存ないてお必いたことりおけいこてすり"></textarea>
+        </div>
+
+        <!-- 写真添付 -->
+        <div class="photo-field">
+          <span class="photo-label-text">写　真</span>
+          <div class="photo-upload-area" id="photo-upload-area">
+            <input type="file" id="f-photo" accept="image/*" onchange="previewPhoto(this)">
+            <div class="photo-upload-hint">📷 ���ビプして写真を選ぶ</div>
+          </div>
+          <div class="photo-preview" id="photo-preview">
+            <img id="photo-preview-img" src="" alt="写真">
+            <br>
+            <button class="photo-remove-btn" onclick="removePhoto()">✕ 写真を劈晤</button>
+          </div>
+        </div>
+
+        <button class="btn-save" onclick="saveRecord()">保　存</button>
+        <div class="success-msg" id="success-msg">✿ 記録しました ✿</div>
+      </div>
+    </div>
+
+    <!-- 記録一覧 -->
+    <div id="tab-list" class="tab-content">
+      <div class="list-header">
+        <h2>❀ 記録一覧</h2>
+        <span class="record-count" id="record-count"></span>
+      </div>
+      <div id="record-list"></div>
+    </div>
+
+  </main>
+
+  <script>
+    const DAYS = ['日', '月', '火', '水', '木', '金', '喟'];
+    const DAY_COLORS = {
+      '日': '#e07070',
+      '喟': '#6090d0',
+    };
+
+    // 削日の日付をセット
+    const todayStr = new Date().toLocaleDateString('sv-SE'); // YYYY-MM-DD
+    document.getElementById('f-date').value = todayStr;
+    updateDow();
+
+    function updateDow() {
+      const val = document.getElementById('f-date').value;
+      const display = document.getElementById('date-display');
+      if (!val) { display.textContent = '�� '; display.style.color = ''; return; }
+      const d = new Date(val + 'T00:00:00');
+      const day = DAYS[d.getDay()];
+      const dateStr = val.replace(/-/g, '/');
+      display.textContent = dateStr + '(' + day + '）';
+      display.style.color = DAY_COLORS[day] || '#4a3e3e';
+    }
+
+    // 写真プレビュー
+    let currentPhotoBase64 = null;
+
+    function previewPhoto(input) {
+      if (!input.files || !input.files[0]) return;
+      const file = input.files[0];
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        currentPhotoBase64 = e.target.result;
+        document.getElementById('photo-preview-img').src = currentPhotoBase64;
+        document.getElementById('photo-preview').style.display = 'block';
+        document.getElementById('photo-upload-area').style.display = 'none';
+      };
+      reader.readAsDataUR(file);
+    }
+
+    function removePhoto() {
+      currentPhotoBase64 = null;
+      document.getElementById('f-photo').value = '';
+      document.getElementById('photo-preview').style.display = 'none';
+      document.getElementById('photo-upload-area').style.display = 'block';
+    }
+
+    // タブ 切り替え
+    function switchTab(tab, btn) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+      document.getElementById('tab-' + tab).classList.add('active');
+      btn.classList.add('active');
+      if (tab === 'list') renderList();
+    }
+
+    // 記録保存
+    function saveRecord() {
+      const date    = document.getElementById('f-date').value;
+      const content = document.getElementById('f-content').value.trim();
+
+      if (!date || !content) {
+        alert('「日付」と「内容」は入力してください。');
+        return;
+      }
+
+      const d   = new Date(date + 'T00:00:00');
+      const dow = DAYS[d.getDay()];
+
+      const record = {
+        id:       Date.now(),
+        date:     date,
+        dow:      dow,
+        content:  content,
+        members:  document.getElementById('f-members').value.trim(),
+        tea:      document.getElementById('f-tea').value.trim(),
+        sweets:   document.getElementById('f-sweets').value.trim(),
+        flower:   document.getElementById('f-flower').value.trim(),
+        kakemono: document.getElementById('f-kakemono').value.trim(),
+        memo:     document.getElementById('f-memo').value.trim(),
+        photo:    currentPhotoBase64 || null,
+      };
+
+      const records = getRecords();
+      records.unshift(record);
+      saveRecords(records);
+
+      // フォームリセット
+      ['f-content','f-members','f-tea','f-sweets','f-flower','f-kakemono','f-memo'].forEach(id => {
+        document.getElementById(id).value = '';
+      });
+      document.getElementById('f-date').value = todayStr;
+      updateDow();
+      removePhoto();
+
+      const msg = document.getElementById('success-msg');
+      msg.style.display = 'block';
+      setTimeout(() => msg.style.display = 'none', 2500);
+    }
+
+    // 記録削除
+    function deleteRecord(id) {
+      if (!confirm('この記録を削除しますか？')) return;
+      const records = getRecords().filter(r => r.id !== id);
+      saveRecords(records);
+      renderList();
+    }
+
+    // 一覧描画
+    function renderList() {
+      const records = getRecords();
+      const container = document.getElementById('record-list');
+      const countEl   = document.getElementById('record-count');
+      countEl.textContent = records.length + ' 件';
+
+      if (records.length === 0) {
+        container.innerHTML = '<div class="empty-msg">まだ記録がありません、<br>「記録する」タブから<br>おけいこの記録をつけてみましょう ❀</div>';
+        return;
+      }
+
+      const dayColorStyle = (dow) => {
+        const c = DAY_COLORS[dow];
+        return c ? `color:${c};` : '';
+      };
+
+      container.innerHTML = records.map((r, idx) => {
+        const dateStr = r.date.replace(/-/g, '/');
+        const dowStr  = r.dow ? `(${r.dow}）` : '';
+        const dowStyle = r.dow ? dayColorStyle(r.dow) : '';
+
+        const metaItems = [
+          r.members  ? ['参加者', r.members]  : null,
+          r.tea      ? ['お茶',   r.tea]      : null,
+          r.sweets   ? ['お菓子', r.sweets]   : null,
+          r.flower   ? ['お花',   r.flower]   : null,
+          r.kakemono ? ['掛物',   r.kakemono] : null,
+        ].filter(Boolean);
+
+        const metaHTML = metaItems.length > 0
+          ? `<div class="card-meta">
+              ${metaItems.map(([l, v]) =>
+                `<div class="card-meta-item">
+                  <span class="mlabel">【${l}】</span>
+                  <span class="mvalue">${escHtml(v)}</span>
+                </div>`
+              ).join('')}
+            </div>`
+          : '';
+
+        const memoHTML = r.memo
+          ? `<div class="card-note"><div class="note-label">学んだこと・感じたこと</div>${escHtml(r.memo)}</div>`
+          : '';
+
+        const photoHTML = r.photo
+          ? `<div class="card-photo"><img src="${r.photo}" alt="写真"></div>`
+          : '';
+
+        const divider = idx < records.length - 1
+          ? '<div class="card-divider">· · ·</div>' : '';
+
+        return `
+          <div class="record-card">
+            <button class="btn-delete" onclick="deleteRecord(${r.id})">削除</button>
+            <div class="card-date" style="${dowStyle}">${escHtml(dateStr + dowStr)}</div>
+            <div class="card-content-label">内容</div>
+            <div class="card-content">${escHtml(r.content)}</div>
+            ${metaHTML}
+            ${memoHTML}
+            ${photoHTML}
+          </div>${divider}`;
+      }).join('');
+    }
+
+    // ローカルストレージ
+    function getRecords() {
+      try { return JSON.parse(localStorage.getItem('okeiko-diary') || '[]'); }
+      catch { return []; }
+    }
+    function saveRecords(records) {
+      localStorage.setItem('okeiko-diary', JSON.stringify(records));
+    }
+
+    // HTMLエスカープ
+    function escHtml(str) {
+      return str
+        .replace(/&/g,'&amp;')
+        .replace(/</g,'&lt;')
+        .replace(/>/g,'&gt;')
+        .replace(/"/g,'&quot;')
+        .replace(/\n/g,'<br>');
+    }
+
+    // Service Worker登録（オフライン対応）
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js').catch(() => {});
+      });
+    }
+  </script>
+
+</body>
+</html>
