@@ -1,0 +1,25 @@
+{
+  "name": "おけいこ日記",
+  "short_name": "おけいこ日記",
+  "description": "茶道のおけいこを記録するアプリ",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#f8faf5",
+  "theme_color": "#c8dfa8",
+  "orientation": "portrait",
+  "lang": "ja",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
